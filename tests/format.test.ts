@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatViolations, formatDiff, formatRuleTable } from "../src/lib/format.js";
+import { formatViolations, formatDiff, formatRuleTable, filterByImpact, IMPACT_ORDER } from "../src/lib/format.js";
 import type { Violation, DiffResult, Rule } from "@accesslint/core";
 
 function makeViolation(overrides: Partial<Violation> = {}): Violation {
@@ -85,6 +85,77 @@ describe("formatDiff", () => {
     expect(output).toContain("FIXED:");
     expect(output).not.toContain("NEW:");
     expect(output).not.toContain("REMAINING:");
+  });
+});
+
+describe("filterByImpact", () => {
+  it("filters violations at or above the threshold", () => {
+    const items = [
+      makeViolation({ impact: "critical", ruleId: "r1" }),
+      makeViolation({ impact: "serious", ruleId: "r2" }),
+      makeViolation({ impact: "moderate", ruleId: "r3" }),
+      makeViolation({ impact: "minor", ruleId: "r4" }),
+    ];
+    const result = filterByImpact(items, "serious");
+    expect(result).toHaveLength(2);
+    expect(result.map((v) => v.ruleId)).toEqual(["r1", "r2"]);
+  });
+
+  it("returns all violations when threshold is minor", () => {
+    const items = [
+      makeViolation({ impact: "critical" }),
+      makeViolation({ impact: "minor" }),
+    ];
+    expect(filterByImpact(items, "minor")).toHaveLength(2);
+  });
+
+  it("returns only critical when threshold is critical", () => {
+    const items = [
+      makeViolation({ impact: "critical" }),
+      makeViolation({ impact: "serious" }),
+    ];
+    const result = filterByImpact(items, "critical");
+    expect(result).toHaveLength(1);
+    expect(result[0].impact).toBe("critical");
+  });
+
+  it("returns empty array when no violations meet threshold", () => {
+    const items = [makeViolation({ impact: "minor" })];
+    expect(filterByImpact(items, "critical")).toHaveLength(0);
+  });
+});
+
+describe("formatViolations with min_impact", () => {
+  it("shows filter note in header when minImpact is set", () => {
+    const violations = [
+      makeViolation({ impact: "critical", ruleId: "r1" }),
+      makeViolation({ impact: "minor", ruleId: "r2" }),
+    ];
+    const output = formatViolations(violations, { minImpact: "serious" });
+    expect(output).toContain("filtered to serious and above from 2 total");
+    expect(output).toContain("Found 1 accessibility violation");
+    expect(output).not.toContain("r2");
+  });
+
+  it("returns message when all violations are below threshold", () => {
+    const violations = [makeViolation({ impact: "minor" })];
+    const output = formatViolations(violations, { minImpact: "critical" });
+    expect(output).toContain("No accessibility violations at critical or above");
+    expect(output).toContain("1 total at lower severity");
+  });
+});
+
+describe("formatDiff with min_impact", () => {
+  it("filters all diff categories by impact", () => {
+    const diff: DiffResult = {
+      fixed: [makeViolation({ impact: "minor", ruleId: "fixed-minor" })],
+      added: [makeViolation({ impact: "critical", ruleId: "added-critical" })],
+      unchanged: [makeViolation({ impact: "moderate", ruleId: "remaining-moderate" })],
+    };
+    const output = formatDiff(diff, { minImpact: "serious" });
+    expect(output).not.toContain("fixed-minor");
+    expect(output).toContain("added-critical");
+    expect(output).not.toContain("remaining-moderate");
   });
 });
 

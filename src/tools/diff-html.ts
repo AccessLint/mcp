@@ -13,6 +13,10 @@ export const diffHtmlSchema = {
     .boolean()
     .optional()
     .describe("Suppress page-level rules"),
+  min_impact: z
+    .enum(["critical", "serious", "moderate", "minor"])
+    .optional()
+    .describe("Only show violations at this severity or above"),
 };
 
 export function registerDiffHtml(server: McpServer): void {
@@ -20,7 +24,7 @@ export function registerDiffHtml(server: McpServer): void {
     "diff_html",
     "Audit new HTML and diff against a previously named audit. Use after audit_html with a name to verify fixes.",
     diffHtmlSchema,
-    async ({ html, before, component_mode }) => {
+    async ({ html, before, component_mode, min_impact }) => {
       const beforeResult = getStoredAudit(before);
       if (!beforeResult) {
         return {
@@ -37,7 +41,7 @@ export function registerDiffHtml(server: McpServer): void {
       const afterResult = audit(html, { componentMode: component_mode });
       const diff = diffAudit(beforeResult, afterResult);
       return {
-        content: [{ type: "text", text: formatDiff(diff) }],
+        content: [{ type: "text", text: formatDiff(diff, { minImpact: min_impact }) }],
       };
     }
   );

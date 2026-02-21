@@ -3,12 +3,26 @@ import { getRuleById } from "@accesslint/core";
 
 const MAX_VIOLATIONS = 50;
 
-const IMPACT_ORDER: Record<string, number> = {
+export const IMPACT_ORDER: Record<string, number> = {
   critical: 0,
   serious: 1,
   moderate: 2,
   minor: 3,
 };
+
+export type Impact = "critical" | "serious" | "moderate" | "minor";
+
+export interface FormatOptions {
+  minImpact?: Impact;
+}
+
+export function filterByImpact<T extends { impact: string }>(
+  items: T[],
+  minImpact: Impact
+): T[] {
+  const threshold = IMPACT_ORDER[minImpact];
+  return items.filter((item) => (IMPACT_ORDER[item.impact] ?? 4) <= threshold);
+}
 
 interface EnrichedViolation {
   ruleId: string;
@@ -81,12 +95,21 @@ function formatViolation(v: EnrichedViolation, index: number): string {
   return lines.join("\n");
 }
 
-export function formatViolations(violations: Violation[]): string {
+export function formatViolations(violations: Violation[], options?: FormatOptions): string {
   if (violations.length === 0) {
     return "No accessibility violations found.";
   }
 
-  const enriched = violations.map(enrichViolation);
+  const totalCount = violations.length;
+  const filtered = options?.minImpact
+    ? filterByImpact(violations, options.minImpact)
+    : violations;
+
+  if (filtered.length === 0) {
+    return `No accessibility violations at ${options!.minImpact} or above (${totalCount} total at lower severity).`;
+  }
+
+  const enriched = filtered.map(enrichViolation);
   enriched.sort(
     (a, b) => (IMPACT_ORDER[a.impact] ?? 4) - (IMPACT_ORDER[b.impact] ?? 4)
   );
@@ -95,18 +118,23 @@ export function formatViolations(violations: Violation[]): string {
   const display = truncated ? enriched.slice(0, MAX_VIOLATIONS) : enriched;
 
   const blocks = display.map((v, i) => formatViolation(v, i + 1));
-  const header = `Found ${violations.length} accessibility violation${violations.length === 1 ? "" : "s"}:`;
+  const filterNote = options?.minImpact
+    ? ` (filtered to ${options.minImpact} and above from ${totalCount} total)`
+    : "";
+  const header = `Found ${filtered.length} accessibility violation${filtered.length === 1 ? "" : "s"}${filterNote}:`;
   const result = [header, "", ...blocks].join("\n");
 
   if (truncated) {
-    return result + `\n\n(Showing ${MAX_VIOLATIONS} of ${violations.length} violations. Fix these first, then re-audit.)`;
+    return result + `\n\n(Showing ${MAX_VIOLATIONS} of ${filtered.length} violations. Fix these first, then re-audit.)`;
   }
   return result;
 }
 
-export function formatDiff(diff: DiffResult): string {
+export function formatDiff(diff: DiffResult, options?: FormatOptions): string {
   const lines: string[] = [];
-  const { fixed, added, unchanged } = diff;
+  const fixed = options?.minImpact ? filterByImpact(diff.fixed, options.minImpact) : diff.fixed;
+  const added = options?.minImpact ? filterByImpact(diff.added, options.minImpact) : diff.added;
+  const unchanged = options?.minImpact ? filterByImpact(diff.unchanged, options.minImpact) : diff.unchanged;
 
   lines.push(
     `Summary: ${fixed.length} fixed, ${added.length} new, ${unchanged.length} remaining`

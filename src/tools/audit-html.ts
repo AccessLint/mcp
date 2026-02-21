@@ -15,6 +15,10 @@ export const auditHtmlSchema = {
     .string()
     .optional()
     .describe('Store result for later diffing (e.g. "before")'),
+  min_impact: z
+    .enum(["critical", "serious", "moderate", "minor"])
+    .optional()
+    .describe("Only show violations at this severity or above"),
 };
 
 export function registerAuditHtml(server: McpServer): void {
@@ -22,10 +26,10 @@ export function registerAuditHtml(server: McpServer): void {
     "audit_html",
     "Audit an HTML string for accessibility violations. Auto-detects fragments vs full documents.",
     auditHtmlSchema,
-    async ({ html, component_mode, name }) => {
+    async ({ html, component_mode, name, min_impact }) => {
       const result = audit(html, { componentMode: component_mode, name });
       return {
-        content: [{ type: "text", text: formatViolations(result.violations) }],
+        content: [{ type: "text", text: formatViolations(result.violations, { minImpact: min_impact }) }],
       };
     }
   );
