@@ -1,0 +1,38 @@
+{
+  "name": "@accesslint/mcp",
+  "version": "0.1.0",
+  "description": "MCP server for accessible agentic coding — WCAG audit tools for AI coding agents",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "accesslint-mcp": "./bin/accesslint-mcp.mjs"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AccessLint/mcp.git"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@accesslint/core": "file:../core",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "happy-dom": "^20.4.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
