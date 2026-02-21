@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { audit, getStoredAudit, clearStoredAudits } from "../src/lib/state.js";
 import { diffAudit } from "@accesslint/core";
 import { formatViolations, formatDiff } from "../src/lib/format.js";
@@ -139,5 +139,93 @@ describe("list_rules pipeline", () => {
     for (const rule of rules) {
       expect(rule.id).toMatch(/^aria\//);
     }
+  });
+});
+
+describe("audit_url pipeline", () => {
+  beforeEach(() => {
+    clearStoredAudits();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function mockFetch(body: string, init?: { status?: number; statusText?: string; contentType?: string }) {
+    const status = init?.status ?? 200;
+    const statusText = init?.statusText ?? "OK";
+    const contentType = init?.contentType ?? "text/html; charset=utf-8";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(body, {
+          status,
+          statusText,
+          headers: { "content-type": contentType },
+        })
+      )
+    );
+  }
+
+  it("fetches HTML and finds violations", async () => {
+    mockFetch('<html><body><img src="photo.jpg"></body></html>');
+    const html = await (await fetch("http://example.com")).text();
+    const result = audit(html, { componentMode: false });
+    expect(result.violations.length).toBeGreaterThan(0);
+    const text = formatViolations(result.violations);
+    expect(text).toContain("text-alternatives/img-alt");
+  });
+
+  it("returns no violations for accessible HTML", async () => {
+    mockFetch(
+      '<!DOCTYPE html><html lang="en"><head><title>Test</title></head><body><img src="photo.jpg" alt="A sunset"></body></html>'
+    );
+    const html = await (await fetch("http://example.com")).text();
+    const result = audit(html, { componentMode: false });
+    const imgAlt = result.violations.find(
+      (v) => v.ruleId === "text-alternatives/img-alt"
+    );
+    expect(imgAlt).toBeUndefined();
+  });
+
+  it("handles network errors", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new Error("ECONNREFUSED"))
+    );
+    await expect(fetch("http://localhost:9999")).rejects.toThrow("ECONNREFUSED");
+  });
+
+  it("handles non-200 responses", async () => {
+    mockFetch("Not Found", { status: 404, statusText: "Not Found" });
+    const response = await fetch("http://example.com/missing");
+    expect(response.ok).toBe(false);
+    expect(response.status).toBe(404);
+  });
+
+  it("handles non-HTML content types", async () => {
+    mockFetch('{"key": "value"}', { contentType: "application/json" });
+    const response = await fetch("http://example.com/api");
+    const contentType = response.headers.get("content-type") ?? "";
+    expect(contentType.includes("text/html")).toBe(false);
+  });
+
+  it("stores named audit for later diffing", async () => {
+    mockFetch('<html><body><img src="photo.jpg"></body></html>');
+    const html = await (await fetch("http://example.com")).text();
+    audit(html, { componentMode: false, name: "url-audit" });
+    const stored = getStoredAudit("url-audit");
+    expect(stored).toBeDefined();
+    expect(stored!.violations.length).toBeGreaterThan(0);
+  });
+
+  it("applies min_impact filtering", async () => {
+    mockFetch('<html><body><img src="photo.jpg"></body></html>');
+    const html = await (await fetch("http://example.com")).text();
+    const result = audit(html, { componentMode: false });
+    const text = formatViolations(result.violations, { minImpact: "critical" });
+    expect(text).toContain("[CRITICAL]");
+    expect(text).not.toContain("[MINOR]");
+    expect(text).not.toContain("[MODERATE]");
   });
 });
