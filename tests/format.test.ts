@@ -1,6 +1,18 @@
-import { describe, it, expect } from "vitest";
-import { formatViolations, formatDiff, formatRuleTable, filterByImpact, IMPACT_ORDER } from "../src/lib/format.js";
+import { describe, it, expect, vi } from "vitest";
 import type { Violation, DiffResult, Rule } from "@accesslint/core";
+
+vi.mock("@accesslint/core", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@accesslint/core")>();
+  return {
+    ...original,
+    getRuleById: (id: string) => {
+      const rule = original.getRuleById(id);
+      return rule ? { ...rule, browserHint: "Screenshot the image to describe its visual content for alt text" } : rule;
+    },
+  };
+});
+
+const { formatViolations, formatDiff, formatRuleTable, filterByImpact, IMPACT_ORDER } = await import("../src/lib/format.js");
 
 function makeViolation(overrides: Partial<Violation> = {}): Violation {
   return {
@@ -177,5 +189,22 @@ describe("formatRuleTable", () => {
     expect(output).toContain("1 rule:");
     expect(output).toContain("text-alternatives/img-alt");
     expect(output).toContain("contextual");
+  });
+});
+
+describe("browserHint visibility", () => {
+  it("shows browserHint when present", () => {
+    const output = formatViolations([makeViolation()]);
+    expect(output).toContain("Browser hint: Screenshot the image");
+  });
+
+  it("shows browserHint in diff NEW section", () => {
+    const diff: DiffResult = {
+      fixed: [],
+      added: [makeViolation()],
+      unchanged: [],
+    };
+    const output = formatDiff(diff);
+    expect(output).toContain("Browser hint: Screenshot the image");
   });
 });

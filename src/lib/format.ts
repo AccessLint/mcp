@@ -33,6 +33,7 @@ interface EnrichedViolation {
   context?: string;
   fix?: FixSuggestion;
   fixability?: string;
+  browserHint?: string;
   guidance?: string;
 }
 
@@ -47,6 +48,7 @@ function enrichViolation(v: Violation): EnrichedViolation {
     context: v.context,
     fix: v.fix,
     fixability: rule?.fixability,
+    browserHint: (rule as Record<string, unknown>)?.browserHint as string | undefined,
     guidance: rule?.guidance,
   };
 }
@@ -84,6 +86,9 @@ function formatViolation(v: EnrichedViolation, index: number): string {
   }
   if (v.fixability) {
     lines.push(`   Fixability: ${v.fixability}`);
+  }
+  if (v.browserHint) {
+    lines.push(`   Browser hint: ${v.browserHint}`);
   }
   if (v.context) {
     lines.push(`   Context: ${v.context}`);
@@ -157,6 +162,9 @@ export function formatDiff(diff: DiffResult, options?: FormatOptions): string {
       lines.push(`    ${v.message}`);
       if (enriched.fix) {
         lines.push(`    Fix: ${formatFixSuggestion(enriched.fix)}`);
+      }
+      if (enriched.browserHint) {
+        lines.push(`    Browser hint: ${enriched.browserHint}`);
       }
     }
   }

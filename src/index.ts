@@ -6,10 +6,15 @@ import { registerAuditUrl } from "./tools/audit-url.js";
 import { registerDiffHtml } from "./tools/diff-html.js";
 import { registerListRules } from "./tools/list-rules.js";
 
-const server = new McpServer({
-  name: "accesslint",
-  version: "0.1.0",
-});
+const server = new McpServer(
+  {
+    name: "accesslint",
+    version: "0.1.0",
+  },
+  {
+    instructions: "When a violation includes a 'Browser hint', use your browser tools (e.g. screenshot, inspect) to follow the hint and improve your fix.",
+  },
+);
 
 registerAuditHtml(server);
 registerAuditFile(server);
