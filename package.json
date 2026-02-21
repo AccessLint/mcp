@@ -26,7 +26,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@accesslint/core": "file:../core",
+    "@accesslint/core": "^0.8.1",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "happy-dom": "^20.4.0",
     "zod": "^3.24.0"
