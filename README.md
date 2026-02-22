@@ -1,6 +1,6 @@
 # @accesslint/mcp
 
-MCP server for accessible agentic coding — WCAG audit tools for AI coding agents.
+MCP server for accessible agentic coding — WCAG audit tools for AI coding agents. Built on [@accesslint/core](https://github.com/AccessLint/core). From [AccessLint](https://www.accesslint.com).
 
 ## Setup
 
