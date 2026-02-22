@@ -1,13 +1,12 @@
 {
   "name": "@accesslint/mcp",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "MCP server for accessible agentic coding — WCAG audit tools for AI coding agents",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "accesslint-mcp": "./bin/accesslint-mcp.mjs",
-    "@accesslint/mcp": "./bin/accesslint-mcp.mjs"
+    "accesslint-mcp": "./bin/accesslint-mcp.js"
   },
   "files": [
     "dist",
