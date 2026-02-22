@@ -24,8 +24,6 @@ Add to your MCP client configuration:
 - **audit_url** — Fetch a URL and audit the returned HTML.
 - **diff_html** — Audit new HTML and diff against a previously named audit to verify fixes.
 - **list_rules** — List available WCAG rules with optional filters by category, level, fixability, or criterion.
-- **storybook_stories** — List stories from a running Storybook instance. Use this to discover components before auditing them.
-
 All audit and diff tools accept an optional `min_impact` parameter to filter results by severity. Valid values, from most to least severe: `critical`, `serious`, `moderate`, `minor`. When set, only violations at that level or above are shown.
 
 Each violation in the audit output includes the rule ID, CSS selector, failing HTML, impact level, and — where available — a concrete fix suggestion, fixability rating, and guidance. When multiple elements break the same rule, shared metadata is printed once to keep output compact.
@@ -41,17 +39,6 @@ To audit React components (`.jsx`/`.tsx`), the agent uses the `audit-react-compo
 3. Passing the rendered HTML to `audit_html` with `component_mode: true`
 
 No extra runtime dependencies are required — the agent renders the component itself based on the source code.
-
-### Storybook Auditing
-
-To audit components rendered in Storybook, the agent uses the `audit-storybook` prompt, which orchestrates:
-
-1. Discovering stories via `storybook_stories`
-2. Navigating to the story's iframe URL in the browser
-3. Extracting the rendered HTML and passing it to `audit_html`
-4. After fixes, reloading the story and using `diff_html` to verify
-
-This works with any framework Storybook supports — React, Vue, Svelte, Web Components, etc. Requires a running Storybook instance and browser tools (e.g. Chrome DevTools MCP).
 
 ## Why use this instead of prompting alone?
 

@@ -93,6 +93,62 @@ export interface BenchmarkResults {
   >;
 }
 
+// --- Render benchmark types ---
+
+export interface RenderTestCase {
+  id: string;
+  file: string;
+  description: string;
+  difficulty: "easy" | "medium" | "hard";
+}
+
+export interface RenderManifest {
+  version: string;
+  cases: RenderTestCase[];
+}
+
+export interface ViolationFingerprint {
+  ruleId: string;
+  impact: string;
+}
+
+export interface RenderCaseRunResult {
+  caseId: string;
+  runIndex: number;
+  durationMs: number;
+  claudeHtml: string | null;
+  groundTruthViolations: ViolationFingerprint[];
+  claudeViolations: ViolationFingerprint[];
+  matched: number;
+  missing: number;
+  extra: number;
+  tokens?: TokenUsage;
+  error?: string;
+}
+
+export interface RenderBenchmarkResults {
+  config: {
+    runs: number;
+    model: string;
+    timeout: number;
+    timestamp: string;
+  };
+  manifest: {
+    version: string;
+    caseCount: number;
+  };
+  cases: Record<
+    string,
+    {
+      description: string;
+      difficulty: "easy" | "medium" | "hard";
+      groundTruthHtml: string;
+      groundTruthViolations: ViolationFingerprint[];
+      runs: RenderCaseRunResult[];
+    }
+  >;
+}
+
 export interface CaseScore {
   caseId: string;
   difficulty: "easy" | "medium" | "hard";
