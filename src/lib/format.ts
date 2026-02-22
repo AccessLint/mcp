@@ -74,13 +74,33 @@ function formatFixSuggestion(fix: FixSuggestion): string {
   }
 }
 
-function formatViolation(v: EnrichedViolation, index: number): string {
+interface ViolationGroup {
+  ruleId: string;
+  impact: string;
+  violations: EnrichedViolation[];
+}
+
+function groupByRule(enriched: EnrichedViolation[]): ViolationGroup[] {
+  const groups: ViolationGroup[] = [];
+  const seen = new Map<string, ViolationGroup>();
+  for (const v of enriched) {
+    let group = seen.get(v.ruleId);
+    if (!group) {
+      group = { ruleId: v.ruleId, impact: v.impact, violations: [] };
+      seen.set(v.ruleId, group);
+      groups.push(group);
+    }
+    group.violations.push(v);
+  }
+  return groups;
+}
+
+function formatSingleViolation(v: EnrichedViolation, index: number): string {
   const lines: string[] = [];
   lines.push(`${index}. [${v.impact.toUpperCase()}] ${v.ruleId}`);
   lines.push(`   ${v.message}`);
   lines.push(`   Element: ${v.selector}`);
   lines.push(`   HTML: ${v.html}`);
-
   if (v.fix) {
     lines.push(`   Fix: ${formatFixSuggestion(v.fix)}`);
   }
@@ -95,6 +115,57 @@ function formatViolation(v: EnrichedViolation, index: number): string {
   }
   if (v.guidance) {
     lines.push(`   Guidance: ${v.guidance}`);
+  }
+  return lines.join("\n");
+}
+
+function formatGroupedViolations(
+  group: ViolationGroup,
+  startIndex: number
+): string {
+  const { violations } = group;
+  const representative = violations[0];
+  const lines: string[] = [];
+
+  // Group header
+  lines.push(
+    `[${representative.impact.toUpperCase()}] ${group.ruleId} (${violations.length} instances)`
+  );
+
+  // Shared metadata
+  if (representative.fixability) {
+    lines.push(`   Fixability: ${representative.fixability}`);
+  }
+  if (representative.browserHint) {
+    lines.push(`   Browser hint: ${representative.browserHint}`);
+  }
+
+  // Context: if all violations share the same context, print once at group level
+  const allContextsSame =
+    representative.context != null &&
+    violations.every((v) => v.context === representative.context);
+  if (allContextsSame) {
+    lines.push(`   Context: ${representative.context}`);
+  }
+
+  if (representative.guidance) {
+    lines.push(`   Guidance: ${representative.guidance}`);
+  }
+
+  // Per-violation instances
+  for (let i = 0; i < violations.length; i++) {
+    const v = violations[i];
+    const num = startIndex + i;
+    lines.push("");
+    lines.push(`   ${num}. ${v.message}`);
+    lines.push(`      Element: ${v.selector}`);
+    lines.push(`      HTML: ${v.html}`);
+    if (v.fix) {
+      lines.push(`      Fix: ${formatFixSuggestion(v.fix)}`);
+    }
+    if (!allContextsSame && v.context) {
+      lines.push(`      Context: ${v.context}`);
+    }
   }
 
   return lines.join("\n");
@@ -122,7 +193,20 @@ export function formatViolations(violations: Violation[], options?: FormatOption
   const truncated = enriched.length > MAX_VIOLATIONS;
   const display = truncated ? enriched.slice(0, MAX_VIOLATIONS) : enriched;
 
-  const blocks = display.map((v, i) => formatViolation(v, i + 1));
+  const groups = groupByRule(display);
+  const blocks: string[] = [];
+  let violationIndex = 1;
+
+  for (const group of groups) {
+    if (group.violations.length === 1) {
+      blocks.push(formatSingleViolation(group.violations[0], violationIndex));
+      violationIndex++;
+    } else {
+      blocks.push(formatGroupedViolations(group, violationIndex));
+      violationIndex += group.violations.length;
+    }
+  }
+
   const filterNote = options?.minImpact
     ? ` (filtered to ${options.minImpact} and above from ${totalCount} total)`
     : "";

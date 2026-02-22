@@ -68,6 +68,87 @@ describe("formatViolations", () => {
     const output = formatViolations(violations);
     expect(output).toContain("Showing 50 of 60 violations");
   });
+
+  it("groups multiple violations of the same rule", () => {
+    const violations = [
+      makeViolation({ selector: "img:nth-child(1)" }),
+      makeViolation({ selector: "img:nth-child(2)" }),
+      makeViolation({ selector: "img:nth-child(3)" }),
+    ];
+    const output = formatViolations(violations);
+
+    // Group header with instance count
+    expect(output).toContain("[CRITICAL] text-alternatives/img-alt (3 instances)");
+
+    // Shared metadata appears once
+    const guidanceMatches = output.match(/Guidance:/g);
+    expect(guidanceMatches).toHaveLength(1);
+    const browserHintMatches = output.match(/Browser hint:/g);
+    expect(browserHintMatches).toHaveLength(1);
+
+    // Per-violation data still present
+    expect(output).toContain("Element: img:nth-child(1)");
+    expect(output).toContain("Element: img:nth-child(2)");
+    expect(output).toContain("Element: img:nth-child(3)");
+
+    // Sub-numbered within the group
+    expect(output).toContain("1. Image element missing alt attribute.");
+    expect(output).toContain("2. Image element missing alt attribute.");
+    expect(output).toContain("3. Image element missing alt attribute.");
+  });
+
+  it("does not show instance count for single-violation rules", () => {
+    const output = formatViolations([makeViolation()]);
+    expect(output).not.toContain("instances)");
+    // Uses flat format with top-level numbering
+    expect(output).toContain("1. [CRITICAL]");
+  });
+
+  it("groups are ordered by highest severity and numbering is continuous", () => {
+    const violations = [
+      makeViolation({ impact: "moderate", ruleId: "moderate-rule", selector: "div:nth-child(1)" }),
+      makeViolation({ impact: "moderate", ruleId: "moderate-rule", selector: "div:nth-child(2)" }),
+      makeViolation({ impact: "critical", ruleId: "critical-rule", selector: "img" }),
+    ];
+    const output = formatViolations(violations);
+
+    // Critical group comes first
+    const criticalIdx = output.indexOf("critical-rule");
+    const moderateIdx = output.indexOf("moderate-rule");
+    expect(criticalIdx).toBeLessThan(moderateIdx);
+
+    // Single critical violation uses flat numbering
+    expect(output).toContain("1. [CRITICAL] critical-rule");
+    // Multi moderate group continues numbering at 2
+    expect(output).toContain("2. ");
+    expect(output).toContain("3. ");
+  });
+
+  it("deduplicates identical context within a group", () => {
+    const violations = [
+      makeViolation({ selector: "img:nth-child(1)", context: "<div>shared context</div>" }),
+      makeViolation({ selector: "img:nth-child(2)", context: "<div>shared context</div>" }),
+    ];
+    const output = formatViolations(violations);
+
+    // Context appears once at group level
+    const contextMatches = output.match(/Context:/g);
+    expect(contextMatches).toHaveLength(1);
+    expect(output).toContain("Context: <div>shared context</div>");
+  });
+
+  it("prints context per-violation when they differ within a group", () => {
+    const violations = [
+      makeViolation({ selector: "img:nth-child(1)", context: "<div>context A</div>" }),
+      makeViolation({ selector: "img:nth-child(2)", context: "<div>context B</div>" }),
+    ];
+    const output = formatViolations(violations);
+
+    const contextMatches = output.match(/Context:/g);
+    expect(contextMatches).toHaveLength(2);
+    expect(output).toContain("Context: <div>context A</div>");
+    expect(output).toContain("Context: <div>context B</div>");
+  });
 });
 
 describe("formatDiff", () => {
