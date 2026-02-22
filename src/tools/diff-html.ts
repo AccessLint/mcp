@@ -8,7 +8,7 @@ export const diffHtmlSchema = {
   html: z.string().describe("Updated HTML to audit and compare"),
   before: z
     .string()
-    .describe("Name of a previously stored audit to compare against"),
+    .describe("Name passed to a prior audit_html call (must run audit_html with this name first)"),
   component_mode: z
     .boolean()
     .optional()
