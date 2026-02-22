@@ -6,6 +6,8 @@ import { registerAuditUrl } from "./tools/audit-url.js";
 import { registerDiffHtml } from "./tools/diff-html.js";
 import { registerListRules } from "./tools/list-rules.js";
 import { registerAuditReactComponentPrompt } from "./prompts/audit-react-component.js";
+import { registerStorybookStories } from "./tools/storybook-stories.js";
+import { registerAuditStorybookPrompt } from "./prompts/audit-storybook.js";
 
 const server = new McpServer(
   {
@@ -13,7 +15,7 @@ const server = new McpServer(
     version: "0.1.0",
   },
   {
-    instructions: "When a violation includes a 'Browser hint', use your browser tools (e.g. screenshot, inspect) to follow the hint and improve your fix. To audit React components (.jsx/.tsx), use the audit-react-component prompt for guidance on rendering them to HTML first.",
+    instructions: "When a violation includes a 'Browser hint', use your browser tools (e.g. screenshot, inspect) to follow the hint and improve your fix. To audit React components (.jsx/.tsx), use the audit-react-component prompt for guidance on rendering them to HTML first. To audit components rendered in Storybook, use the audit-storybook prompt — it orchestrates story discovery, browser rendering, and auditing.",
   },
 );
 
@@ -22,7 +24,9 @@ registerAuditFile(server);
 registerAuditUrl(server);
 registerDiffHtml(server);
 registerListRules(server);
+registerStorybookStories(server);
 registerAuditReactComponentPrompt(server);
+registerAuditStorybookPrompt(server);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
