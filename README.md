@@ -2,24 +2,6 @@
 
 MCP server for accessible agentic coding — WCAG audit tools for AI coding agents.
 
-## Why use this instead of prompting alone?
-
-AI coding agents can attempt accessibility fixes without any tools, but they work from general knowledge rather than a concrete audit of your code. Both approaches were benchmarked across 25 HTML test cases covering 67 fixable WCAG violations (3 runs each, Claude Opus):
-
-| | With @accesslint/mcp | Agent alone |
-|---|---|---|
-| **Violations fixed** | 99.5% (200/201) | 93.5% (188/201) |
-| **Regressions** | 1.7 / run | 2.0 / run |
-| **Cost** | $0.56 / run | $0.62 / run |
-| **Duration** | 270s / run | 377s / run |
-| **Timeouts** | 0 / 63 tasks | 2 / 63 tasks |
-
-Without tools, the agent has to read the HTML, recall WCAG rules from training data, reason about which rules apply to which elements, and then fix them. The MCP replaces that open-ended reasoning with structured output — specific rule IDs, CSS selectors pointing to exact elements, and concrete fix suggestions like `set-attribute role="navigation"`. The agent skips straight to applying fixes.
-
-This shows up directly in the data: the MCP-assisted path uses 23% fewer output tokens per run (9,815 vs 12,758), meaning roughly 3,000 tokens of "thinking out loud" that the agent no longer needs to do. Fewer reasoning steps = fewer tokens = less time = lower cost. The largest gains are on complex cases like nested landmark structures, where the agent alone timed out in 2 of 3 runs while the MCP-assisted path completed every time.
-
-The same principle applies broadly to tool-augmented agents — a deterministic audit engine running axe-core rules is both faster and more reliable at identifying violations than an LLM reasoning from memory. The agent's strength is understanding context and writing code, not recalling rule specifications.
-
 ## Setup
 
 Add to your MCP client configuration:
@@ -70,6 +52,20 @@ To audit components rendered in Storybook, the agent uses the `audit-storybook` 
 4. After fixes, reloading the story and using `diff_html` to verify
 
 This works with any framework Storybook supports — React, Vue, Svelte, Web Components, etc. Requires a running Storybook instance and browser tools (e.g. Chrome DevTools MCP).
+
+## Why use this instead of prompting alone?
+
+Without tools, the agent reasons about WCAG rules from memory. The MCP replaces that with structured output — specific rule IDs, CSS selectors, and fix suggestions — so the agent skips straight to applying fixes. This means 23% fewer output tokens per run, which translates directly to faster and cheaper completions.
+
+Benchmarked across 25 test cases, 67 fixable violations, 3 runs each (Claude Opus):
+
+| | With @accesslint/mcp | Agent alone |
+|---|---|---|
+| **Violations fixed** | 99.5% (200/201) | 93.5% (188/201) |
+| **Regressions** | 1.7 / run | 2.0 / run |
+| **Cost** | $0.56 / run | $0.62 / run |
+| **Duration** | 270s / run | 377s / run |
+| **Timeouts** | 0 / 63 tasks | 2 / 63 tasks |
 
 ## License
 
