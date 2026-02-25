@@ -1,6 +1,6 @@
 {
   "name": "@accesslint/mcp",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "MCP server for accessible agentic coding — WCAG audit tools for AI coding agents",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@accesslint/cli": "^0.3.2",
-    "@accesslint/core": "^0.8.7",
+    "@accesslint/core": "^0.8.8",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "zod": "^3.24.0"
   },
