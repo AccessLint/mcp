@@ -1,26 +1,14 @@
-import type { AuditResult, ConfigureOptions } from "@accesslint/core";
-import { configureRules, clearAllCaches, runAudit } from "@accesslint/core";
-import { parseHtml } from "./parse.js";
+import type { AuditResult } from "@accesslint/core";
+import { audit as cliAudit } from "@accesslint/cli";
 
 const MAX_STORED_AUDITS = 10;
 const storedAudits = new Map<string, AuditResult>();
 
-export function configure(options: ConfigureOptions): void {
-  configureRules(options);
-}
-
 export function audit(
   html: string,
-  options?: { componentMode?: boolean; name?: string }
+  options?: { name?: string }
 ): AuditResult {
-  const { document, isFragment } = parseHtml(html);
-
-  // Auto-enable componentMode for fragments unless explicitly overridden
-  const componentMode = options?.componentMode ?? isFragment;
-  configureRules({ componentMode });
-
-  clearAllCaches();
-  const result = runAudit(document);
+  const result = cliAudit(html);
 
   if (options?.name) {
     storeAudit(options.name, result);

@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { inlineCSS } from "@accesslint/cli/inline-css";
 import { audit } from "../lib/state.js";
 import { formatViolations } from "../lib/format.js";
 
@@ -9,10 +11,6 @@ export const auditFileSchema = {
   path: z
     .string()
     .describe("Path to HTML file (absolute, or relative to cwd)"),
-  component_mode: z
-    .boolean()
-    .optional()
-    .describe("Suppress page-level rules"),
   name: z
     .string()
     .optional()
@@ -28,7 +26,7 @@ export function registerAuditFile(server: McpServer): void {
     "audit_file",
     "Read an HTML file from disk and audit it for accessibility violations.",
     auditFileSchema,
-    async ({ path, component_mode, name, min_impact }) => {
+    async ({ path, name, min_impact }) => {
       const resolved = resolve(path);
       let html: string;
       try {
@@ -42,7 +40,9 @@ export function registerAuditFile(server: McpServer): void {
         };
       }
 
-      const result = audit(html, { componentMode: component_mode, name });
+      const baseURL = pathToFileURL(resolved).href;
+      const processedHtml = await inlineCSS(html, baseURL);
+      const result = audit(processedHtml, { name });
       return {
         content: [{ type: "text", text: formatViolations(result.violations, { minImpact: min_impact }) }],
       };

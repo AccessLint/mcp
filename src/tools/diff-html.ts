@@ -9,10 +9,6 @@ export const diffHtmlSchema = {
   before: z
     .string()
     .describe("Name passed to a prior audit_html call (must run audit_html with this name first)"),
-  component_mode: z
-    .boolean()
-    .optional()
-    .describe("Suppress page-level rules"),
   min_impact: z
     .enum(["critical", "serious", "moderate", "minor"])
     .optional()
@@ -24,7 +20,7 @@ export function registerDiffHtml(server: McpServer): void {
     "diff_html",
     "Audit new HTML and diff against a previously named audit. Use after audit_html with a name to verify fixes.",
     diffHtmlSchema,
-    async ({ html, before, component_mode, min_impact }) => {
+    async ({ html, before, min_impact }) => {
       const beforeResult = getStoredAudit(before);
       if (!beforeResult) {
         return {
@@ -38,7 +34,7 @@ export function registerDiffHtml(server: McpServer): void {
         };
       }
 
-      const afterResult = audit(html, { componentMode: component_mode });
+      const afterResult = audit(html);
       const diff = diffAudit(beforeResult, afterResult);
       return {
         content: [{ type: "text", text: formatDiff(diff, { minImpact: min_impact }) }],

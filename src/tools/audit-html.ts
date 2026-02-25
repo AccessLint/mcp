@@ -5,12 +5,6 @@ import { formatViolations } from "../lib/format.js";
 
 export const auditHtmlSchema = {
   html: z.string().describe("HTML to audit for accessibility violations"),
-  component_mode: z
-    .boolean()
-    .optional()
-    .describe(
-      "Suppress page-level rules (auto-detected when HTML lacks <html> tag)"
-    ),
   name: z
     .string()
     .optional()
@@ -26,8 +20,8 @@ export function registerAuditHtml(server: McpServer): void {
     "audit_html",
     "Audit an HTML string for accessibility violations. Auto-detects fragments vs full documents.",
     auditHtmlSchema,
-    async ({ html, component_mode, name, min_impact }) => {
-      const result = audit(html, { componentMode: component_mode, name });
+    async ({ html, name, min_impact }) => {
+      const result = audit(html, { name });
       return {
         content: [{ type: "text", text: formatViolations(result.violations, { minImpact: min_impact }) }],
       };

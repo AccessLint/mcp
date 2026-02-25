@@ -33,10 +33,10 @@ If the component requires props, use realistic example values.
 
 ### Step 3: Audit the HTML
 
-Pass your rendered HTML to the \`audit_html\` tool with \`component_mode: true\`:
+Pass your rendered HTML to the \`audit_html\` tool:
 
 \`\`\`
-audit_html({ html: "<your rendered HTML>", component_mode: true })
+audit_html({ html: "<your rendered HTML>" })
 \`\`\`
 `;
 

@@ -1,14 +1,11 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { inlineCSS } from "@accesslint/cli/inline-css";
 import { audit } from "../lib/state.js";
 import { formatViolations } from "../lib/format.js";
 
 export const auditUrlSchema = {
   url: z.string().url().describe("URL to fetch and audit"),
-  component_mode: z
-    .boolean()
-    .optional()
-    .describe("Suppress page-level rules"),
   name: z
     .string()
     .optional()
@@ -24,7 +21,7 @@ export function registerAuditUrl(server: McpServer): void {
     "audit_url",
     "Fetch a URL and audit the returned HTML for accessibility violations.",
     auditUrlSchema,
-    async ({ url, component_mode, name, min_impact }) => {
+    async ({ url, name, min_impact }) => {
       let response: Response;
       try {
         response = await fetch(url);
@@ -63,10 +60,8 @@ export function registerAuditUrl(server: McpServer): void {
       }
 
       const html = await response.text();
-      const result = audit(html, {
-        componentMode: component_mode ?? false,
-        name,
-      });
+      const processedHtml = await inlineCSS(html, url);
+      const result = audit(processedHtml, { name });
       return {
         content: [
           {

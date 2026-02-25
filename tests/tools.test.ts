@@ -170,7 +170,7 @@ describe("audit_url pipeline", () => {
   it("fetches HTML and finds violations", async () => {
     mockFetch('<html><body><img src="photo.jpg"></body></html>');
     const html = await (await fetch("http://example.com")).text();
-    const result = audit(html, { componentMode: false });
+    const result = audit(html, {});
     expect(result.violations.length).toBeGreaterThan(0);
     const text = formatViolations(result.violations);
     expect(text).toContain("text-alternatives/img-alt");
@@ -181,7 +181,7 @@ describe("audit_url pipeline", () => {
       '<!DOCTYPE html><html lang="en"><head><title>Test</title></head><body><img src="photo.jpg" alt="A sunset"></body></html>'
     );
     const html = await (await fetch("http://example.com")).text();
-    const result = audit(html, { componentMode: false });
+    const result = audit(html, {});
     const imgAlt = result.violations.find(
       (v) => v.ruleId === "text-alternatives/img-alt"
     );
@@ -213,7 +213,7 @@ describe("audit_url pipeline", () => {
   it("stores named audit for later diffing", async () => {
     mockFetch('<html><body><img src="photo.jpg"></body></html>');
     const html = await (await fetch("http://example.com")).text();
-    audit(html, { componentMode: false, name: "url-audit" });
+    audit(html, { name: "url-audit" });
     const stored = getStoredAudit("url-audit");
     expect(stored).toBeDefined();
     expect(stored!.violations.length).toBeGreaterThan(0);
@@ -222,7 +222,7 @@ describe("audit_url pipeline", () => {
   it("applies min_impact filtering", async () => {
     mockFetch('<html><body><img src="photo.jpg"></body></html>');
     const html = await (await fetch("http://example.com")).text();
-    const result = audit(html, { componentMode: false });
+    const result = audit(html, {});
     const text = formatViolations(result.violations, { minImpact: "critical" });
     expect(text).toContain("[CRITICAL]");
     expect(text).not.toContain("[MINOR]");
