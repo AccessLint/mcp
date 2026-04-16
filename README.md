@@ -1,3 +1,5 @@
+> **This package is maintained in the [AccessLint monorepo](https://github.com/AccessLint/accesslint).**
+
 # @accesslint/mcp
 
 MCP server for accessible agentic coding — WCAG audit tools for AI coding agents. Built on [@accesslint/core](https://github.com/AccessLint/core). From [AccessLint](https://www.accesslint.com).
